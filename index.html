@@ -6,7 +6,6 @@
 
 <style>
 body {
-    margin: 0;
     background: #E8E3D4;
     font-family: Arial, sans-serif;
     display: flex;
@@ -14,6 +13,7 @@ body {
     align-items: center;
     height: 100vh;
     color: rgba(0,0,0,0.6);
+    overflow: hidden;
 }
 
 body::after {
@@ -22,7 +22,9 @@ body::after {
     inset: 0;
     background: rgba(255,255,255,0.15);
     pointer-events: none;
+    overflow: hidden;
 }
+
 
 .blur-wrapper {
     filter: blur(1px) contrast(0.9) brightness(1.05);
@@ -169,16 +171,7 @@ function load(inputId, key) {
     document.getElementById(inputId).onchange = e => {
         const file = e.target.files[0];
         if (file) {
-
-            Object.values(tracks).forEach(t => t.pause());
-
-            Object.values(tracks).forEach(t => t.currentTime = 0);
-
             tracks[key].src = URL.createObjectURL(file);
-
-            isPlaying = false;
-
-            document.getElementById("progress").style.width = "0%";
         }
     };
 }
@@ -191,19 +184,9 @@ load("drums", "drums");
 function togglePlay() {
     isPlaying = !isPlaying;
 
-    if (isPlaying) {
-        let main = Object.values(tracks).find(t => t.src);
-        let startTime = main ? main.currentTime : 0;
-
-        Object.values(tracks).forEach(t => {
-            if (t.src) {
-                t.currentTime = startTime;
-                t.play();
-            }
-        });
-    } else {
-        Object.values(tracks).forEach(t => t.pause());
-    }
+    Object.values(tracks).forEach(t => {
+        if (t.src) isPlaying ? t.play() : t.pause();
+    });
 }
 
 function toggleStem(key, btnId) {
