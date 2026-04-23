@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>PLAYER</title>
+
+<style>
+body {
+    background: #E8E3D4;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: rgba(0,0,0,0.6);
+}
+
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.15);
+    pointer-events: none;
+}
+
+.blur-wrapper {
+    filter: blur(1px) contrast(0.9) brightness(1.05);
+}
+
+.player {
+    width: 280px;
+    text-align: center;
+}
+
+.circle-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 70px;
+    justify-items: center;
+    align-items: center;
+    margin: 40px 0;
+}
+
+.circle {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.7);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: 0.2s;
+    filter: blur(0.5px);
+}
+
+.circle.muted {
+    background: #cfcfcf;
+}
+
+.play {
+    font-size: 40px;
+    cursor: pointer;
+    filter: blur(0.5px);
+}
+
+.progress-container {
+    width: 100%;
+    height: 6px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 10px;
+    margin: 20px 0;
+    box-shadow: inset 0 0 3px rgba(0,0,0,0.2);
+    filter: blur(0.5px);
+}
+
+.progress {
+    height: 100%;
+    width: 0%;
+    background: #d9d4c5;
+    border-radius: 10px;
+}
+
+.controls {
+    margin-top: 10px;
+}
+
+button {
+    filter: blur(0.5px);
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.uploads {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    font-size: 12px;
+}
+
+.uploads label {
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.uploads input {
+    display: none;
+}
+</style>
+
+</head>
+<body>
+
+<div class="blur-wrapper">
+<div class="player">
+
+    <div class="circle-grid">
+        <div></div>
+        <div class="circle" id="vocalsBtn"></div>
+        <div></div>
+
+        <div class="circle" id="instrumentalBtn"></div>
+        <div class="play" onclick="togglePlay()">⏯</div>
+        <div class="circle" id="bassBtn"></div>
+
+        <div></div>
+        <div class="circle" id="drumsBtn"></div>
+        <div></div>
+    </div>
+
+    <div class="progress-container" onclick="seek(event)">
+        <div class="progress" id="progress"></div>
+    </div>
+
+    <div class="controls">
+        <button onclick="skip(-5)"><</button>
+        <button onclick="skip(5)">></button>
+    </div>
+
+    <div class="uploads">
+        <label>VOCALS<input type="file" id="vocals"></label>
+        <label>INST<input type="file" id="instrumental"></label>
+        <label>BASS<input type="file" id="bass"></label>
+        <label>DRUMS<input type="file" id="drums"></label>
+    </div>
+
+</div>
+</div>
+
+<script>
+let tracks = {
+    vocals: new Audio(),
+    instrumental: new Audio(),
+    bass: new Audio(),
+    drums: new Audio()
+};
+
+let muted = {
+    vocals: false,
+    instrumental: false,
+    bass: false,
+    drums: false
+};
+
+let isPlaying = false;
+
+function load(inputId, key) {
+    document.getElementById(inputId).onchange = e => {
+        const file = e.target.files[0];
+        if (file) {
+            tracks[key].src = URL.createObjectURL(file);
+        }
+    };
+}
+
+load("vocals", "vocals");
+load("instrumental", "instrumental");
+load("bass", "bass");
+load("drums", "drums");
+
+function togglePlay() {
+    isPlaying = !isPlaying;
+
+    Object.values(tracks).forEach(t => {
+        if (t.src) isPlaying ? t.play() : t.pause();
+    });
+}
+
+function toggleStem(key, btnId) {
+    muted[key] = !muted[key];
+
+    tracks[key].volume = muted[key] ? 0 : 1;
+
+    document.getElementById(btnId).classList.toggle("muted");
+}
+
+document.getElementById("vocalsBtn").onclick = () => toggleStem("vocals", "vocalsBtn");
+document.getElementById("instrumentalBtn").onclick = () => toggleStem("instrumental", "instrumentalBtn");
+document.getElementById("bassBtn").onclick = () => toggleStem("bass", "bassBtn");
+document.getElementById("drumsBtn").onclick = () => toggleStem("drums", "drumsBtn");
+
+function skip(sec) {
+    Object.values(tracks).forEach(t => {
+        if (t.src) t.currentTime += sec;
+    });
+}
+
+function seek(e) {
+    let main = Object.values(tracks).find(t => t.src);
+    if (!main || !main.duration) return;
+
+    let rect = e.currentTarget.getBoundingClientRect();
+    let percent = (e.clientX - rect.left) / rect.width;
+
+    Object.values(tracks).forEach(t => {
+        if (t.src) t.currentTime = percent * main.duration;
+    });
+}
+
+setInterval(() => {
+    let main = Object.values(tracks).find(t => t.src);
+    if (main && main.duration) {
+        let percent = (main.currentTime / main.duration) * 100;
+        document.getElementById("progress").style.width = percent + "%";
+    }
+}, 200);
+</script>
+
+</body>
+</html>
